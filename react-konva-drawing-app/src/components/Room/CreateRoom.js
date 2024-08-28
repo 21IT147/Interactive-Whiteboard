@@ -33,13 +33,27 @@ const CreateRoom = () => {
     alert('Room code copied to clipboard!');
   };
 
-  const handleStart = () => {
-    navigate('/whiteboard');
+  const handleNavigateToJoinRoom = () => {
+    navigate('/join-room');
   };
 
   return (
-    <div className="flex flex-col items-center">
-      <h2 className="text-2xl font-bold mb-4">Create a Room</h2>
+    <div className="flex flex-col items-center justify-center h-screen bg-gray-100">
+      <div className="flex space-x-4 mb-6">
+        <button
+          onClick={handleNavigateToJoinRoom}
+          className="px-6 py-3 bg-green-500 text-white rounded shadow hover:bg-green-600 transition duration-200"
+        >
+          Join Room
+        </button>
+        <button
+          onClick={() => navigate('/')}
+          className="px-6 py-3 bg-gray-500 text-white rounded shadow hover:bg-gray-600 transition duration-200"
+        >
+          Home
+        </button>
+      </div>
+      <h2 className="text-3xl font-bold mb-4">Create a Room</h2>
       <input
         type="text"
         placeholder="Enter your name"
@@ -54,18 +68,17 @@ const CreateRoom = () => {
         Generate Room Code
       </button>
       {isRoomCreated && (
-        <div className="mt-4 text-lg font-semibold">
-          <p>Room Created Successfully!</p>
-          <p className="mb-2">Your Room Code:</p>
+        <div className="mt-6 text-center">
+          <p className="text-lg font-semibold mb-2">Room Created Successfully!</p>
           <div 
-            className="px-4 py-2 bg-white border rounded shadow cursor-pointer" 
+            className="px-4 py-2 mb-4 bg-white border rounded shadow cursor-pointer" 
             onClick={handleCopyCode}
           >
             {roomCode}
           </div>
           <button
-            onClick={handleStart}
-            className="mt-4 px-6 py-3 bg-blue-500 text-white rounded shadow hover:bg-blue-600 transition duration-200"
+            onClick={() => navigate(`/room/${roomCode}`)}
+            className="px-6 py-3 bg-blue-500 text-white rounded shadow hover:bg-blue-600 transition duration-200"
           >
             Start
           </button>

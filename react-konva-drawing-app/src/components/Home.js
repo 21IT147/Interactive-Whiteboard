@@ -12,12 +12,19 @@ const Home = () => {
         >
           Go to Whiteboard
         </Link>
-       
+
         <Link 
-          to="/room-management" 
+          to="/create-room" 
+          className="px-6 py-3 bg-green-500 text-white rounded shadow-lg hover:bg-green-600 transition duration-200"
+        >
+          Create Room
+        </Link>
+
+        <Link 
+          to="/join-room" 
           className="px-6 py-3 bg-purple-500 text-white rounded shadow-lg hover:bg-purple-600 transition duration-200"
         >
-          Room Management
+          Join Room
         </Link>
       </div>
     </div>
