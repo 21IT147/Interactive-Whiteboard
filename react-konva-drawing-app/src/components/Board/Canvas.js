@@ -33,7 +33,7 @@ const Canvas = ({ tool, lines, setLines, redoStack, setRedoStack }) => {
   };
 
   return (
-    <div className="flex-grow bg-white border-t border-gray-200 relative mt-16 shadow-inner">
+    <div className="flex-grow bg-white  border-gray-300 relative mt-16 shadow-lg rounded-b-lg">
       <Stage
         width={window.innerWidth}
         height={window.innerHeight - 100}

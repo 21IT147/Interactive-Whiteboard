@@ -29,7 +29,7 @@ const WhiteBoard = () => {
   };
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex flex-col h-screen bg-white">
       <ToolPanel 
         onSelectTool={handleSelectTool} 
         onUndo={handleUndo} 

@@ -1,87 +1,112 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-
-// Function to generate a numeric room code
-const generateNumericRoomCode = () => {
-  const length = 6;
-  let roomCode = '';
-  for (let i = 0; i < length; i++) {
-    roomCode += Math.floor(Math.random() * 10); // Generate a digit from 0 to 9
-  }
-  return roomCode;
-};
+import useRoomStore from '../Store/store';
 
 const CreateRoom = () => {
-  const [name, setName] = useState('');
-  const [roomCode, setRoomCode] = useState('');
-  const [isRoomCreated, setIsRoomCreated] = useState(false);
   const navigate = useNavigate();
+  const [name, setName] = useState('');
+  const { roomId, generateRoomId } = useRoomStore();
+  const [isInputFocused, setIsInputFocused] = useState(false);
+  const [toast, setToast] = useState({ show: false, message: '', type: '' });
 
-  const handleCreateRoom = () => {
-    if (!name) {
-      alert('Please enter your name.');
-      return;
+  const handleCreateRoom = (e) => {
+    e.preventDefault();
+    if (name.trim().length < 2) {
+      showToast('Name must have at least 2 characters', 'error');
+    } else {
+      generateRoomId(name);
+      showToast('Room created successfully!', 'success');
     }
-    const numericCode = generateNumericRoomCode();
-    const code = `${name}-${numericCode}`;
-    setRoomCode(code);
-    setIsRoomCreated(true);
   };
 
   const handleCopyCode = () => {
-    navigator.clipboard.writeText(roomCode);
-    alert('Room code copied to clipboard!');
+    if (roomId) {
+      navigator.clipboard.writeText(roomId);
+      showToast('Room code copied to clipboard!', 'info');
+    }
   };
 
-  const handleNavigateToJoinRoom = () => {
+  const handleJoinRoom = () => {
     navigate('/join-room');
   };
 
+  const handleGoToRoom = () => {
+    if (roomId) {
+      navigate(`/room/${roomId}`);
+    }
+  };
+
+  const showToast = (message, type) => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast({ show: false, message: '', type: '' }), 3000);
+  };
+
   return (
-    <div className="flex flex-col items-center justify-center h-screen bg-gray-100">
-      <div className="flex space-x-4 mb-6">
+    <div className="min-h-screen flex items-center justify-center bg-gray-900 p-4">
+      <div className="w-full max-w-md">
+        <div className="p-8 bg-gray-800 rounded-lg border-2 border-blue-500">
+          <h1 className="text-4xl font-bold text-blue-400 mb-8">Create Room</h1>
+          <form onSubmit={handleCreateRoom} className="space-y-6">
+            <div>
+              <input
+                type="text"
+                placeholder="Enter your name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className={`w-full p-3 bg-gray-700 text-white rounded-md border-2 ${
+                  isInputFocused ? 'border-blue-500' : 'border-gray-600'
+                } focus:outline-none focus:border-blue-500`}
+                onFocus={() => setIsInputFocused(true)}
+                onBlur={() => setIsInputFocused(false)}
+                required
+              />
+            </div>
+            <div className="h-12 bg-gray-700 text-blue-400 font-semibold p-3 rounded-md">
+              {roomId || " "}
+            </div>
+            <div className="flex space-x-4">
+              <button
+                type="submit"
+                className="w-2/3 p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition duration-300"
+              >
+                Generate Room Code
+              </button>
+              <button
+                type="button"
+                onClick={handleCopyCode}
+                disabled={!roomId}
+                className={`w-1/3 p-3 ${
+                  roomId
+                    ? 'bg-red-600 hover:bg-red-700'
+                    : 'bg-gray-600 cursor-not-allowed'
+                } text-white rounded-md transition duration-300`}
+              >
+                Copy Code
+              </button>
+            </div>
+          </form>
+        </div>
         <button
-          onClick={handleNavigateToJoinRoom}
-          className="px-6 py-3 bg-green-500 text-white rounded shadow hover:bg-green-600 transition duration-200"
+          onClick={handleJoinRoom}
+          className="w-full mt-4 p-3 bg-green-600 hover:bg-green-700 text-white rounded-md transition duration-300"
         >
           Join Room
         </button>
-        <button
-          onClick={() => navigate('/')}
-          className="px-6 py-3 bg-gray-500 text-white rounded shadow hover:bg-gray-600 transition duration-200"
-        >
-          Home
-        </button>
-      </div>
-      <h2 className="text-3xl font-bold mb-4">Create a Room</h2>
-      <input
-        type="text"
-        placeholder="Enter your name"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        className="px-4 py-2 mb-4 border rounded shadow"
-      />
-      <button
-        onClick={handleCreateRoom}
-        className="px-6 py-3 bg-blue-500 text-white rounded shadow hover:bg-blue-600 transition duration-200"
-      >
-        Generate Room Code
-      </button>
-      {isRoomCreated && (
-        <div className="mt-6 text-center">
-          <p className="text-lg font-semibold mb-2">Room Created Successfully!</p>
-          <div 
-            className="px-4 py-2 mb-4 bg-white border rounded shadow cursor-pointer" 
-            onClick={handleCopyCode}
-          >
-            {roomCode}
-          </div>
+        {roomId && (
           <button
-            onClick={() => navigate(`/room/${roomCode}`)}
-            className="px-6 py-3 bg-blue-500 text-white rounded shadow hover:bg-blue-600 transition duration-200"
+            onClick={handleGoToRoom}
+            className="w-full mt-4 p-3 bg-yellow-500 hover:bg-yellow-600 text-white rounded-md transition duration-300"
           >
-            Start
+            Go
           </button>
+        )}
+      </div>
+      {toast.show && (
+        <div className={`fixed top-4 right-4 p-6 rounded-md text-white text-lg shadow-lg ${
+          toast.type === 'success' ? 'bg-green-500' :
+          toast.type === 'error' ? 'bg-red-500' : 'bg-blue-500'
+        }`}>
+          {toast.message}
         </div>
       )}
     </div>

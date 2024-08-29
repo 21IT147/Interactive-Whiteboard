@@ -6,12 +6,15 @@ import NoPage from './components/NoPage';
 import RoomManagement from './components/Room/RoomManagement';
 import CreateRoom from './components/Room/CreateRoom';
 import JoinRoom from './components/Room/JoinRoom';
+import '@mantine/core/styles.css';
+import '@mantine/notifications/styles.css';  
 
 function App() {
   return (
     <Router>
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/room/:roomId" element={<WhiteBoard />} />
         <Route path="/whiteboard" element={<WhiteBoard />} />
         <Route path="/room-management" element={<RoomManagement />} />
         <Route path="/create-room" element={<CreateRoom />} />
