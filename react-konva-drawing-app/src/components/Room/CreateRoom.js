@@ -1,22 +1,54 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import useRoomStore from '../Store/store';
 
 const CreateRoom = () => {
   const navigate = useNavigate();
   const [name, setName] = useState('');
-  const { roomId, generateRoomId } = useRoomStore();
+  const [roomId, setRoomId] = useState(''); // Use local state for roomId
   const [isInputFocused, setIsInputFocused] = useState(false);
   const [toast, setToast] = useState({ show: false, message: '', type: '' });
 
-  const handleCreateRoom = (e) => {
+  const handleCreateRoom = async (e) => {
     e.preventDefault();
     if (name.trim().length < 2) {
       showToast('Name must have at least 2 characters', 'error');
     } else {
-      generateRoomId(name);
-      showToast('Room created successfully!', 'success');
+      const generatedRoomId = generateRoomId(name); // Generate roomId using the new logic
+      try {
+        const response = await fetch('http://localhost:5000/api/add-room', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ roomId: generatedRoomId, name }),
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          setRoomId(data.room.roomId); // Update the roomId locally
+          showToast('Room created successfully!', 'success');
+        } else {
+          showToast(data.message, 'error');
+        }
+      } catch (error) {
+        showToast('Error creating room', 'error');
+      }
     }
+  };
+
+  const generateRoomId = (name) => {
+    const generateNumericRoomCode = () => {
+      const length = 6;
+      let roomCode = '';
+      for (let i = 0; i < length; i++) {
+        roomCode += Math.floor(Math.random() * 10);
+      }
+      return roomCode;
+    };
+
+    const numericCode = generateNumericRoomCode();
+    return `${name}-${numericCode}`; // Return generated room ID
   };
 
   const handleCopyCode = () => {
@@ -32,7 +64,7 @@ const CreateRoom = () => {
 
   const handleGoToRoom = () => {
     if (roomId) {
-      navigate(`/room/${roomId}`);
+      navigate(`/room/${roomId}`,{state:{from:'create-room',roomId:roomId}});
     }
   };
 
@@ -102,10 +134,15 @@ const CreateRoom = () => {
         )}
       </div>
       {toast.show && (
-        <div className={`fixed top-4 right-4 p-6 rounded-md text-white text-lg shadow-lg ${
-          toast.type === 'success' ? 'bg-green-500' :
-          toast.type === 'error' ? 'bg-red-500' : 'bg-blue-500'
-        }`}>
+        <div
+          className={`fixed top-4 right-4 p-6 rounded-md text-white text-lg shadow-lg ${
+            toast.type === 'success'
+              ? 'bg-green-500'
+              : toast.type === 'error'
+              ? 'bg-red-500'
+              : 'bg-blue-500'
+          }`}
+        >
           {toast.message}
         </div>
       )}

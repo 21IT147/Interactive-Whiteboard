@@ -1,21 +1,16 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import useRoomStore from '../Store/store';
 
 const JoinRoom = () => {
   const [enteredRoomCode, setEnteredRoomCode] = useState('');
-  const [enteredName, setEnteredName] = useState(''); // State to store the name
+  const [enteredName, setEnteredName] = useState('');
   const [isInputFocused, setIsInputFocused] = useState(false);
   const [toast, setToast] = useState({ show: false, message: '', type: '' });
   const navigate = useNavigate();
-  const { roomId } = useRoomStore();
 
-  const handleJoinRoom = (e) => {
+  const handleJoinRoom = async (e) => {
     e.preventDefault();
-    if (!roomId) {
-      showToast('No active room available', 'error');
-      return;
-    }
+
     if (enteredRoomCode.trim() === '') {
       showToast('Please enter a room code', 'error');
       return;
@@ -25,11 +20,19 @@ const JoinRoom = () => {
       return;
     }
 
-    if (enteredRoomCode === roomId) {
-      // Store the entered name in localStorage or some other global state if needed
-      navigate(`/room/${roomId}`);
-    } else {
-      showToast('Room code does not match', 'error');
+    try {
+      const response = await fetch(`http://localhost:5000/api/verify-room/${enteredRoomCode}`);
+      const data = await response.json();
+
+      if (response.ok && data.exists) {
+        // Store the entered name in local storage or use it in other logic if needed
+        showToast('Joining room...', 'success');
+        navigate(`/room/${enteredRoomCode}`,{state:{from:"join-room",roomId:enteredRoomCode}});
+      } else {
+        showToast(data.message || 'Room code does not match or room does not exist', 'error');
+      }
+    } catch (error) {
+      showToast('Error checking room code', 'error');
     }
   };
 
@@ -90,10 +93,15 @@ const JoinRoom = () => {
         </button>
       </div>
       {toast.show && (
-        <div className={`fixed top-4 right-4 p-6 rounded-md text-white text-lg shadow-lg ${
-          toast.type === 'success' ? 'bg-green-500' :
-          toast.type === 'error' ? 'bg-red-500' : 'bg-blue-500'
-        }`}>
+        <div
+          className={`fixed top-4 right-4 p-6 rounded-md text-white text-lg shadow-lg ${
+            toast.type === 'success'
+              ? 'bg-green-500'
+              : toast.type === 'error'
+              ? 'bg-red-500'
+              : 'bg-blue-500'
+          }`}
+        >
           {toast.message}
         </div>
       )}

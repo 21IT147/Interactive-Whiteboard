@@ -5,7 +5,7 @@ import Canvas from './Canvas';
 const WhiteBoard = () => {
   const [lines, setLines] = useState([]); // Stores all drawn lines
   const [redoStack, setRedoStack] = useState([]); // Stores lines for redo action
-  const [tool, setTool] = useState('pen');
+  const [tool, setTool] = useState(null);
 
   const handleSelectTool = (selectedTool) => {
     setTool(selectedTool);

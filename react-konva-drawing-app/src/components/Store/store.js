@@ -1,4 +1,4 @@
-import create from 'zustand';
+import { create } from 'zustand';
 
 const useRoomStore = create((set) => ({
   roomId: '',
@@ -10,7 +10,7 @@ const useRoomStore = create((set) => ({
       const length = 6;
       let roomCode = '';
       for (let i = 0; i < length; i++) {
-        roomCode += Math.floor(Math.random() * 10); // Generate a digit from 0 to 9
+        roomCode += Math.floor(Math.random() * 10); 
       }
       return roomCode;
     };
