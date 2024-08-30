@@ -1,13 +1,12 @@
 import React, { useState, useCallback } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faEraser, faUndo, faRedo, faTrash, faPen, faTimes } from '@fortawesome/free-solid-svg-icons';
-import { useNavigate } from 'react-router-dom';
+import { faEraser, faUndo, faRedo, faTrash, faPen } from '@fortawesome/free-solid-svg-icons';
 
 const ToolPanel = ({ onSelectTool, onUndo, onRedo, onClear }) => {
   const [selectedTool, setSelectedTool] = useState(null);
   const [penSize] = useState(6); // Fixed pen size
   const [hoveredTool, setHoveredTool] = useState(null); // State to track hovered tool
-  const navigate = useNavigate();
+
 
   const handleToolClick = useCallback(
     (tool) => {
@@ -28,11 +27,8 @@ const ToolPanel = ({ onSelectTool, onUndo, onRedo, onClear }) => {
     [selectedTool, penSize, onSelectTool]
   );
 
-  const handleNavigateHome = () => {
-    // Clear the stack and navigate to home
-    onClear(); // Clear any drawings
-    navigate('/', { replace: true }); // Navigate to home and clear the navigation stack
-  };
+
+ 
 
   return (
     <div className="relative">
@@ -139,13 +135,13 @@ const ToolPanel = ({ onSelectTool, onUndo, onRedo, onClear }) => {
         </div>
       </div>
 
-      {/* Close/Exit Button */}
+      {/* //Close/Exit Button
       <button
         onClick={handleNavigateHome}
         className="absolute top-0 right-0 m-4 text-red-500 hover:text-red-600 focus:outline-none transition duration-200"
       >
         <FontAwesomeIcon icon={faTimes} size="lg" />
-      </button>
+      </button> */}
     </div>
   );
 };

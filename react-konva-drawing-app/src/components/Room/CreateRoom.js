@@ -8,32 +8,41 @@ const CreateRoom = () => {
   const [isInputFocused, setIsInputFocused] = useState(false);
   const [toast, setToast] = useState({ show: false, message: '', type: '' });
 
-  const handleCreateRoom = async (e) => {
+  const handleGenerateRoomCode = (e) => {
     e.preventDefault();
     if (name.trim().length < 2) {
       showToast('Name must have at least 2 characters', 'error');
     } else {
       const generatedRoomId = generateRoomId(name); // Generate roomId using the new logic
-      try {
-        const response = await fetch('http://localhost:5000/api/add-room', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ roomId: generatedRoomId, name }),
-        });
+      setRoomId(generatedRoomId); // Update the roomId locally
+      showToast('Room code generated!', 'success');
+    }
+  };
 
-        const data = await response.json();
+  const handleCreateRoom = async () => {
+    if (!roomId) {
+      showToast('Please generate a room code first', 'error');
+      return;
+    }
+    try {
+      const response = await fetch('http://localhost:5000/api/add-room', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ roomId, name }),
+      });
 
-        if (response.ok) {
-          setRoomId(data.room.roomId); // Update the roomId locally
-          showToast('Room created successfully!', 'success');
-        } else {
-          showToast(data.message, 'error');
-        }
-      } catch (error) {
-        showToast('Error creating room', 'error');
+      const data = await response.json();
+
+      if (response.ok) {
+        showToast('Room created successfully!', 'success');
+        navigate(`/room/${roomId}`, { state: { from: 'create-room', roomId } });
+      } else {
+        showToast(data.message, 'error');
       }
+    } catch (error) {
+      showToast('Error creating room', 'error');
     }
   };
 
@@ -62,12 +71,6 @@ const CreateRoom = () => {
     navigate('/join-room');
   };
 
-  const handleGoToRoom = () => {
-    if (roomId) {
-      navigate(`/room/${roomId}`,{state:{from:'create-room',roomId:roomId}});
-    }
-  };
-
   const showToast = (message, type) => {
     setToast({ show: true, message, type });
     setTimeout(() => setToast({ show: false, message: '', type: '' }), 3000);
@@ -78,7 +81,7 @@ const CreateRoom = () => {
       <div className="w-full max-w-md">
         <div className="p-8 bg-gray-800 rounded-lg border-2 border-blue-500">
           <h1 className="text-4xl font-bold text-blue-400 mb-8">Create Room</h1>
-          <form onSubmit={handleCreateRoom} className="space-y-6">
+          <form onSubmit={handleGenerateRoomCode} className="space-y-6">
             <div>
               <input
                 type="text"
@@ -126,7 +129,7 @@ const CreateRoom = () => {
         </button>
         {roomId && (
           <button
-            onClick={handleGoToRoom}
+            onClick={handleCreateRoom}
             className="w-full mt-4 p-3 bg-yellow-500 hover:bg-yellow-600 text-white rounded-md transition duration-300"
           >
             Go

@@ -1,0 +1,399 @@
+CreateRoom.js:
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+
+const CreateRoom = () => {
+  const navigate = useNavigate();
+  const [name, setName] = useState('');
+  const [roomId, setRoomId] = useState(''); // Use local state for roomId
+  const [isInputFocused, setIsInputFocused] = useState(false);
+  const [toast, setToast] = useState({ show: false, message: '', type: '' });
+
+  const handleCreateRoom = async (e) => {
+    e.preventDefault();
+    if (name.trim().length < 2) {
+      showToast('Name must have at least 2 characters', 'error');
+    } else {
+      const generatedRoomId = generateRoomId(name); // Generate roomId using the new logic
+      try {
+        const response = await fetch('http://localhost:5000/api/add-room', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ roomId: generatedRoomId, name }),
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          setRoomId(data.room.roomId); // Update the roomId locally
+          showToast('Room created successfully!', 'success');
+        } else {
+          showToast(data.message, 'error');
+        }
+      } catch (error) {
+        showToast('Error creating room', 'error');
+      }
+    }
+  };
+
+  const generateRoomId = (name) => {
+    const generateNumericRoomCode = () => {
+      const length = 6;
+      let roomCode = '';
+      for (let i = 0; i < length; i++) {
+        roomCode += Math.floor(Math.random() * 10);
+      }
+      return roomCode;
+    };
+
+    const numericCode = generateNumericRoomCode();
+    return `${name}-${numericCode}`; // Return generated room ID
+  };
+
+  const handleCopyCode = () => {
+    if (roomId) {
+      navigator.clipboard.writeText(roomId);
+      showToast('Room code copied to clipboard!', 'info');
+    }
+  };
+
+  const handleJoinRoom = () => {
+    navigate('/join-room');
+  };
+
+  const handleGoToRoom = () => {
+    if (roomId) {
+      navigate(`/room/${roomId}`,{state:{from:'create-room',roomId:roomId}});
+    }
+  };
+
+  const showToast = (message, type) => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast({ show: false, message: '', type: '' }), 3000);
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-900 p-4">
+      <div className="w-full max-w-md">
+        <div className="p-8 bg-gray-800 rounded-lg border-2 border-blue-500">
+          <h1 className="text-4xl font-bold text-blue-400 mb-8">Create Room</h1>
+          <form onSubmit={handleCreateRoom} className="space-y-6">
+            <div>
+              <input
+                type="text"
+                placeholder="Enter your name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className={`w-full p-3 bg-gray-700 text-white rounded-md border-2 ${
+                  isInputFocused ? 'border-blue-500' : 'border-gray-600'
+                } focus:outline-none focus:border-blue-500`}
+                onFocus={() => setIsInputFocused(true)}
+                onBlur={() => setIsInputFocused(false)}
+                required
+              />
+            </div>
+            <div className="h-12 bg-gray-700 text-blue-400 font-semibold p-3 rounded-md">
+              {roomId || " "}
+            </div>
+            <div className="flex space-x-4">
+              <button
+                type="submit"
+                className="w-2/3 p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition duration-300"
+              >
+                Generate Room Code
+              </button>
+              <button
+                type="button"
+                onClick={handleCopyCode}
+                disabled={!roomId}
+                className={`w-1/3 p-3 ${
+                  roomId
+                    ? 'bg-red-600 hover:bg-red-700'
+                    : 'bg-gray-600 cursor-not-allowed'
+                } text-white rounded-md transition duration-300`}
+              >
+                Copy Code
+              </button>
+            </div>
+          </form>
+        </div>
+        <button
+          onClick={handleJoinRoom}
+          className="w-full mt-4 p-3 bg-green-600 hover:bg-green-700 text-white rounded-md transition duration-300"
+        >
+          Join Room
+        </button>
+        {roomId && (
+          <button
+            onClick={handleGoToRoom}
+            className="w-full mt-4 p-3 bg-yellow-500 hover:bg-yellow-600 text-white rounded-md transition duration-300"
+          >
+            Go
+          </button>
+        )}
+      </div>
+      {toast.show && (
+        <div
+          className={`fixed top-4 right-4 p-6 rounded-md text-white text-lg shadow-lg ${
+            toast.type === 'success'
+              ? 'bg-green-500'
+              : toast.type === 'error'
+              ? 'bg-red-500'
+              : 'bg-blue-500'
+          }`}
+        >
+          {toast.message}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default CreateRoom;
+
+JoinRoom.js:
+import React, { useState, useEffect } from 'react';
+import ToolPanel from './ToolPanel';
+import { useLocation, useNavigate } from 'react-router-dom';
+import Canvas from './Canvas';
+
+const SharedWhiteBoard = () => {
+  const [lines, setLines] = useState([]); 
+  const [redoStack, setRedoStack] = useState([]); 
+  const [tool, setTool] = useState();
+  const [isCreator, setIsCreator] = useState(true);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const from = location.state?.from;
+  const roomId = location.state?.roomId; 
+
+  useEffect(() => {
+    if (from === 'join-room') {
+      setIsCreator(false);
+    }
+  }, [from]);
+
+  // Handles the selection of drawing tools
+  const handleSelectTool = (selectedTool) => {
+    setTool(selectedTool);
+  };
+
+  // Handles undo action
+  const handleUndo = () => {
+    if (lines.length === 0) return;
+    setRedoStack((prevRedoStack) => [...prevRedoStack, lines[lines.length - 1]]);
+    setLines((prevLines) => prevLines.slice(0, -1));
+  };
+
+  // Handles redo action
+  const handleRedo = () => {
+    if (redoStack.length === 0) return;
+    setLines((prevLines) => [...prevLines, redoStack[redoStack.length - 1]]);
+    setRedoStack((prevRedoStack) => prevRedoStack.slice(0, -1));
+  };
+
+  // Clears the entire board
+  const handleClear = () => {
+    setLines([]);
+    setRedoStack([]);
+  };
+
+  // Handles the close of the whiteboard
+  const handleClose = async () => {
+    if (isCreator) {
+      try {
+        await fetch(`http://localhost:5000/api/remove-room/${roomId}`, {
+          method: 'DELETE',
+        });
+        console.log('Room removed from backend.');
+      } catch (error) {
+        console.error('Error removing room:', error);
+      }
+    }
+    navigate('/'); // Redirect to the home or another appropriate page
+  };
+
+
+  return (
+    <div className="flex flex-col h-screen bg-white">
+      <button
+        className="absolute top-4 right-4 p-2 bg-red-500 text-white rounded"
+        onClick={handleClose}
+      >
+        Close
+      </button>
+      <ToolPanel
+        onSelectTool={handleSelectTool}
+        onUndo={handleUndo}
+        onRedo={handleRedo}
+        onClear={handleClear}
+      />
+      <Canvas
+        tool={tool}
+        lines={lines}
+        setLines={setLines}
+        redoStack={redoStack}
+        setRedoStack={setRedoStack}
+      />
+    </div>
+  );
+};
+
+export default SharedWhiteBoard;
+
+
+ShareWhiteBoard.js:
+import React, { useState, useEffect } from 'react';
+import ToolPanel from './ToolPanel';
+import { useLocation, useNavigate } from 'react-router-dom';
+import Canvas from './Canvas';
+
+const SharedWhiteBoard = () => {
+  const [lines, setLines] = useState([]); 
+  const [redoStack, setRedoStack] = useState([]); 
+  const [tool, setTool] = useState();
+  const [isCreator, setIsCreator] = useState(true);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const from = location.state?.from;
+  const roomId = location.state?.roomId; 
+
+  useEffect(() => {
+    if (from === 'join-room') {
+      setIsCreator(false);
+    }
+  }, [from]);
+
+  // Handles the selection of drawing tools
+  const handleSelectTool = (selectedTool) => {
+    setTool(selectedTool);
+  };
+
+  // Handles undo action
+  const handleUndo = () => {
+    if (lines.length === 0) return;
+    setRedoStack((prevRedoStack) => [...prevRedoStack, lines[lines.length - 1]]);
+    setLines((prevLines) => prevLines.slice(0, -1));
+  };
+
+  // Handles redo action
+  const handleRedo = () => {
+    if (redoStack.length === 0) return;
+    setLines((prevLines) => [...prevLines, redoStack[redoStack.length - 1]]);
+    setRedoStack((prevRedoStack) => prevRedoStack.slice(0, -1));
+  };
+
+  // Clears the entire board
+  const handleClear = () => {
+    setLines([]);
+    setRedoStack([]);
+  };
+
+  // Handles the close of the whiteboard
+  const handleClose = async () => {
+    if (isCreator) {
+      try {
+        await fetch(`http://localhost:5000/api/remove-room/${roomId}`, {
+          method: 'DELETE',
+        });
+        console.log('Room removed from backend.');
+      } catch (error) {
+        console.error('Error removing room:', error);
+      }
+    }
+    navigate('/'); // Redirect to the home or another appropriate page
+  };
+
+
+  return (
+    <div className="flex flex-col h-screen bg-white">
+      <button
+        className="absolute top-4 right-4 p-2 bg-red-500 text-white rounded"
+        onClick={handleClose}
+      >
+        Close
+      </button>
+      <ToolPanel
+        onSelectTool={handleSelectTool}
+        onUndo={handleUndo}
+        onRedo={handleRedo}
+        onClear={handleClear}
+      />
+      <Canvas
+        tool={tool}
+        lines={lines}
+        setLines={setLines}
+        redoStack={redoStack}
+        setRedoStack={setRedoStack}
+      />
+    </div>
+  );
+};
+
+export default SharedWhiteBoard;
+
+
+app.js:
+const express = require('express');
+const bodyParser = require('body-parser');
+const cors = require('cors');
+
+const app = express();
+const PORT = process.env.PORT || 5000;
+
+app.use(cors());
+app.use(bodyParser.json());
+
+// In-memory storage for rooms (replace with a database for persistence)
+let rooms = [];
+
+// Route to fetch all rooms
+app.get('/api/rooms', (req, res) => {
+  res.json(rooms);
+});
+
+// Route to verify a room exists
+app.get('/api/verify-room/:roomId', (req, res) => {
+  const { roomId } = req.params;
+  const roomExists = rooms.some((room) => room.roomId === roomId);
+  
+  if (roomExists) {
+    res.json({ message: 'Room exists', exists: true });
+  } else {
+    res.status(404).json({ message: 'Room not found', exists: false });
+  }
+});
+
+// Route to add a new room
+app.post('/api/add-room', (req, res) => {
+  const { roomId, name } = req.body;
+
+  // Check if roomId already exists
+  const roomExists = rooms.some((room) => room.roomId === roomId);
+  if (roomExists) {
+    return res.status(400).json({ message: 'Room already exists' });
+  }
+
+  // Add the new room
+  const newRoom = { roomId, name, createdAt: new Date() };
+  rooms.push(newRoom);
+  res.status(201).json({ message: 'Room added successfully', room: newRoom });
+});
+
+// Route to remove a room
+app.delete('/api/remove-room/:roomId', (req, res) => {
+  const { roomId } = req.params;
+
+  // Remove the room from the list
+  rooms = rooms.filter((room) => room.roomId !== roomId);
+  res.json({ message: 'Room removed successfully' });
+});
+
+// Start the server
+app.listen(PORT, () => {
+  console.log(`Server is running on http://localhost:${PORT}`);
+});

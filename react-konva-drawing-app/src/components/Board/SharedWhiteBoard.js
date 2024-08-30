@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import ToolPanel from './ToolPanel';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Canvas from './Canvas';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faTimes } from '@fortawesome/free-solid-svg-icons';
 
 const SharedWhiteBoard = () => {
   const [lines, setLines] = useState([]); 
@@ -60,14 +62,14 @@ const SharedWhiteBoard = () => {
     navigate('/'); // Redirect to the home or another appropriate page
   };
 
-
   return (
-    <div className="flex flex-col h-screen bg-white">
+    <div className="flex flex-col h-screen bg-white relative">
       <button
-        className="absolute top-4 right-4 p-2 bg-red-500 text-white rounded"
+        className="absolute top-4 right-4 p-2 bg-transparent border-none text-red-500 rounded"
         onClick={handleClose}
+        aria-label="Close"
       >
-        Close
+        <FontAwesomeIcon icon={faTimes} size="lg" />
       </button>
       <ToolPanel
         onSelectTool={handleSelectTool}
