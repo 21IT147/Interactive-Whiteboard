@@ -30,11 +30,13 @@ const SharedWhiteBoard = () => {
       setIsCreator(false);
     }
 
-    const newPeer = new Peer({
-      host: 'localhost',
-      port: 9000,
-      path: '/',
-    });
+    // const newPeer = new Peer({
+    //   host: 'localhost',
+    //   port: 9000,
+    //   path: '/',
+    // });
+
+    const newPeer = new Peer();
 
     newPeer.on('open', async (id) => {
       console.log('My peer ID is: ' + id);

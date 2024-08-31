@@ -14,11 +14,7 @@ const JoinRoom = () => {
   useEffect(() => {
     if (peerId) {
       // Create a PeerJS instance for the user joining the room
-      const peer = new Peer(
-        {host: 'localhost',
-          port: 9000,
-          path: '/',}
-      );
+      const peer = new Peer();
 
       // Once the peer is open and connected, initiate the connection to the creator's peerId
       peer.on('open', (id) => {
