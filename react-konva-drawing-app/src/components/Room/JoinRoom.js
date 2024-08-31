@@ -1,12 +1,59 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Peer from 'peerjs';
 
 const JoinRoom = () => {
   const [enteredRoomCode, setEnteredRoomCode] = useState('');
   const [enteredName, setEnteredName] = useState('');
   const [isInputFocused, setIsInputFocused] = useState(false);
   const [toast, setToast] = useState({ show: false, message: '', type: '' });
+  const [isSharing, setIsSharing] = useState(false);
+  const [peerId, setPeerId] = useState(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (peerId) {
+      // Create a PeerJS instance for the user joining the room
+      const peer = new Peer(
+        {host: 'localhost',
+          port: 9000,
+          path: '/',}
+      );
+
+      // Once the peer is open and connected, initiate the connection to the creator's peerId
+      peer.on('open', (id) => {
+        console.log('Peer ID for joining:', id);
+        const connection = peer.connect(peerId);
+
+        // Handle data received from the creator
+        connection.on('data', (data) => {
+          console.log('Received from creator:', data);
+        });
+
+        // Handle errors
+        connection.on('error', (err) => {
+          console.error('Error in peer connection:', err);
+          showToast('Error connecting to shared screen', 'error');
+        });
+      });
+
+      // Handle incoming call to join the screen stream
+      peer.on('call', (call) => {
+        call.answer(); // Automatically answer calls for now
+        call.on('stream', (remoteStream) => {
+          const videoElement = document.getElementById('sharedScreenVideo');
+          if (videoElement) {
+            videoElement.srcObject = remoteStream;
+            videoElement.play();
+          }
+        });
+      });
+
+      return () => {
+        peer.destroy();
+      };
+    }
+  }, [peerId]);
 
   const handleJoinRoom = async (e) => {
     e.preventDefault();
@@ -25,9 +72,15 @@ const JoinRoom = () => {
       const data = await response.json();
 
       if (response.ok && data.exists) {
-        // Store the entered name in local storage or use it in other logic if needed
-        showToast('Joining room...', 'success');
-        navigate(`/room/${enteredRoomCode}`,{state:{from:"join-room",roomId:enteredRoomCode}});
+        // Extract peerId from backend response
+        const fetchedPeerId = data.peerId;
+        console.log('Fetched Peer ID from backend:', fetchedPeerId);
+
+        showToast('Connecting to screen share...', 'success');
+        setPeerId(fetchedPeerId); // Set the peerId extracted from the backend
+        setTimeout(() => {
+          setIsSharing(true);
+        }, 2000);
       } else {
         showToast(data.message || 'Room code does not match or room does not exist', 'error');
       }
@@ -45,10 +98,27 @@ const JoinRoom = () => {
     navigate('/create-room');
   };
 
+  if (isSharing) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-900 p-4">
+        <h2 className="text-2xl font-bold text-blue-400 mb-4">Viewing Shared Screen</h2>
+        <div className="w-full max-w-4xl aspect-video bg-gray-800 rounded-lg border-2 border-blue-500 flex items-center justify-center">
+          <video id="sharedScreenVideo" className="w-full h-full" autoPlay></video>
+        </div>
+        <button
+          onClick={() => setIsSharing(false)}
+          className="mt-6 p-3 bg-red-600 hover:bg-red-700 text-white rounded-md transition duration-300"
+        >
+          Leave Screen Share
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-900 p-4">
       <div className="w-full max-w-md p-8 bg-gray-800 rounded-lg border-2 border-blue-500">
-        <h1 className="text-4xl font-bold text-blue-400 mb-8">Join Room</h1>
+        <h1 className="text-4xl font-bold text-blue-400 mb-8">Join Screen Share</h1>
         <form onSubmit={handleJoinRoom} className="space-y-6">
           <div>
             <input
@@ -82,7 +152,7 @@ const JoinRoom = () => {
             type="submit"
             className="w-full p-3 bg-green-600 hover:bg-green-700 text-white rounded-md transition duration-300"
           >
-            Join Room
+            Join Screen Share
           </button>
         </form>
         <button
