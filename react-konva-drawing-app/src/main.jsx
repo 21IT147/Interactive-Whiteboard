@@ -4,8 +4,7 @@ import './index.css';
 import App from './App';
 import { MantineProvider } from '@mantine/core';
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(
+ReactDOM.createRoot(document.getElementById('root')).render(
   <MantineProvider defaultColorScheme="dark">
   <React.StrictMode>
     <App />
