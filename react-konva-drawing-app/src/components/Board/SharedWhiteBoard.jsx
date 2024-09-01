@@ -82,7 +82,7 @@ const SharedWhiteBoard = () => {
 
   const saveCreatorPeer = async (peerId) => {
     try {
-      const response = await fetch('http://localhost:5000/api/save-creator-peer', {
+      const response = await fetch('https://interactive-whiteboard-nodeserver.onrender.com/api/save-creator-peer', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -99,7 +99,7 @@ const SharedWhiteBoard = () => {
 
   const joinRoom = async (joinerId, peerInstance) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/get-creator-peer/${roomId}`);
+      const response = await fetch(`https://interactive-whiteboard-nodeserver.onrender.com/api/get-creator-peer/${roomId}`);
       if (!response.ok) {
         throw new Error('Failed to get creator peer');
       }
@@ -149,7 +149,7 @@ const SharedWhiteBoard = () => {
   const handleClose = async () => {
     if (isCreator) {
       try {
-        await fetch(`http://localhost:5000/api/remove-room/${roomId}`, {
+        await fetch(`https://interactive-whiteboard-nodeserver.onrender.com/api/remove-room/${roomId}`, {
           method: 'DELETE',
         });
         console.log('Room removed from backend.');

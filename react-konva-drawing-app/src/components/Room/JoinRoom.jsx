@@ -64,7 +64,7 @@ const JoinRoom = () => {
     }
 
     try {
-      const response = await fetch(`http://localhost:5000/api/verify-room/${enteredRoomCode}`);
+      const response = await fetch(`https://interactive-whiteboard-nodeserver.onrender.com/api/verify-room/${enteredRoomCode}`);
       const data = await response.json();
 
       if (response.ok && data.exists) {

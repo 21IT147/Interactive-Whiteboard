@@ -25,7 +25,7 @@ const CreateRoom = () => {
       return;
     }
     try {
-      const response = await fetch('http://localhost:5000/api/add-room', {
+      const response = await fetch('https://interactive-whiteboard-nodeserver.onrender.com/api/add-room', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
