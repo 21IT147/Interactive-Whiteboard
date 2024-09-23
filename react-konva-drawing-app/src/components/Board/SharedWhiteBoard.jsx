@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Peer from 'peerjs';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTimes, faDesktop, faStop, faVideo, faVideoSlash, faMicrophone, faMicrophoneSlash } from '@fortawesome/free-solid-svg-icons';
+import { faTimes, faDesktop } from '@fortawesome/free-solid-svg-icons';
 import ToolPanel from './ToolPanel';
 import Canvas from './Canvas';
 
@@ -15,11 +15,7 @@ const SharedWhiteBoard = () => {
   const [peerId, setPeerId] = useState('');
   const [isScreenSharing, setIsScreenSharing] = useState(false);
   const [remoteStream, setRemoteStream] = useState(null);
-  const [isVideoOn, setIsVideoOn] = useState(false);
-  const [isAudioOn, setIsAudioOn] = useState(false);
-  const [creatorVideoStream, setCreatorVideoStream] = useState(null);
   const screenShareStreamRef = useRef(null);
-  const videoRef = useRef(null);
   const peerConnectionsRef = useRef({});
 
   const location = useLocation();
@@ -58,8 +54,6 @@ const SharedWhiteBoard = () => {
           console.log('Peer joined:', data.peerId);
         } else if (data.type === 'draw') {
           handleRemoteDraw(data);
-        } else if (data.type === 'video-off') {
-          stopVideoStream();
         }
       });
     });
@@ -68,17 +62,10 @@ const SharedWhiteBoard = () => {
 
     return () => {
       stopScreenShare();
-      stopVideoStream();
       Object.values(peerConnectionsRef.current).forEach(conn => conn.close());
       newPeer.destroy();
     };
   }, [from, isCreator, roomId]);
-
-  useEffect(() => {
-    if (videoRef.current && creatorVideoStream) {
-      videoRef.current.srcObject = creatorVideoStream;
-    }
-  }, [creatorVideoStream]);
 
   const saveCreatorPeer = async (peerId) => {
     try {
@@ -211,46 +198,6 @@ const SharedWhiteBoard = () => {
     });
   };
 
-  const startVideoStream = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: true,
-      });
-
-      setCreatorVideoStream(stream);
-      setIsVideoOn(true);
-
-      Object.values(peerConnectionsRef.current).forEach((conn) => {
-        if (conn.open) {
-          const call = peer.call(conn.peer, stream);
-          call.on('stream', (remoteStream) => {
-            // Handle the remote stream if needed
-          });
-        }
-      });
-
-    } catch (error) {
-      console.error('Error starting video stream:', error);
-    }
-  };
-
-  const stopVideoStream = () => {
-    if (creatorVideoStream) {
-      creatorVideoStream.getTracks().forEach(track => track.stop()); // Stop all tracks
-      setCreatorVideoStream(null);
-      setIsVideoOn(false);
-    }
-  
-    // Inform peers that video is turned off
-    Object.values(peerConnectionsRef.current).forEach((conn) => {
-      if (conn.open) {
-        conn.send({ type: 'video-off' });
-      }
-    });
-  };
-  
-
   const broadcastDraw = (drawData) => {
     Object.values(peerConnectionsRef.current).forEach((conn) => {
       if (conn.open) {
@@ -303,46 +250,13 @@ const SharedWhiteBoard = () => {
       />
       <div className="absolute bottom-4 right-4 flex space-x-2">
         <button
-          className={`p-2 ${isVideoOn ? 'bg-green-500' : 'bg-gray-500'} text-white rounded`}
-          onClick={isVideoOn ? stopVideoStream : startVideoStream}
-          aria-label={isVideoOn ? 'Turn off video' : 'Turn on video'}
-        >
-          <FontAwesomeIcon icon={isVideoOn ? faVideoSlash : faVideo} />
-        </button>
-        <button
           className={`p-2 ${isScreenSharing ? 'bg-yellow-500' : 'bg-gray-500'} text-white rounded`}
           onClick={isScreenSharing ? stopScreenShare : startScreenShare}
           aria-label={isScreenSharing ? 'Stop screen sharing' : 'Start screen sharing'}
         >
           <FontAwesomeIcon icon={faDesktop} />
         </button>
-        <button
-          className={`p-2 ${isAudioOn ? 'bg-green-500' : 'bg-gray-500'} text-white rounded`}
-          onClick={() => {
-            if (isAudioOn) {
-              creatorVideoStream?.getAudioTracks().forEach(track => track.stop());
-              setIsAudioOn(false);
-            } else {
-              startVideoStream();
-              setIsAudioOn(true);
-            }
-          }}
-          aria-label={isAudioOn ? 'Turn off audio' : 'Turn on audio'}
-        >
-          <FontAwesomeIcon icon={isAudioOn ? faMicrophoneSlash : faMicrophone} />
-        </button>
       </div>
-      {isVideoOn && creatorVideoStream && (
-        <div className="absolute top-16 right-4 w-32 h-24 border rounded bg-black">
-          <video
-            autoPlay
-            muted
-            playsInline
-            className="w-full h-full object-cover"
-            ref={videoRef}
-          />
-        </div>
-      )}
       {remoteStream && (
         <div className="absolute bottom-4 left-4 w-32 h-24 border rounded bg-black">
           <video
@@ -355,7 +269,6 @@ const SharedWhiteBoard = () => {
       )}
     </div>
   );
-  
 };
 
 export default SharedWhiteBoard;
